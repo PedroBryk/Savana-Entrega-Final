@@ -5,6 +5,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { MenuService } from './menu.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { CreateMenuDto } from './dto/create-menu.dto';
 
 @ApiTags('Cardápio')
 @Controller('menu')
@@ -26,17 +27,11 @@ export class MenuController {
     }),
   }))
   async create(
-    @Body('name') name: string,
-    @Body('description') description: string,
-    @Body('price') price: string,
-    @Body('category') category: string,
+    @Body() body: CreateMenuDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.menuService.create({
-      name,
-      description,
-      price: Number(price),
-      category,
+      ...body,
       image: file ? `/upload/${file.filename}` : undefined,
     });
   }

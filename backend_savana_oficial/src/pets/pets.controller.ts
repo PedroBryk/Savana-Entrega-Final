@@ -5,6 +5,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PetsService } from './pets.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { CreatePetDto } from './dto/create-pet.dto';
 
 @ApiTags('Pets')
 @Controller('pets')
@@ -26,15 +27,11 @@ export class PetsController {
     }),
   }))
   create(
-    @Body() body: { name: string; species: string; age: string; breed: string; description: string },
+    @Body() body: CreatePetDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.petsService.create({
-      name: body.name,
-      species: body.species,
-      age: Number(body.age),
-      breed: body.breed,
-      description: body.description,
+      ...body,
       image: file ? `/upload/${file.filename}` : undefined,
     });
   }
