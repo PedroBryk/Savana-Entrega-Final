@@ -1,0 +1,22 @@
+# FRONTEND
+savana/node_modules
+savana/.next
+
+# BACKEND
+backend_savana_oficial/node_modules
+backend_savana_oficial/dist
+
+# ENV
+.env
+backend_savana_oficial/.env
+savana/.env
+
+# DATABASE
+*.db
+
+# LOGS
+npm-debug.log
+
+# UPLOADS
+backend_savana_oficial/upload/*
+!backend_savana_oficial/upload/.gitkeep
