@@ -1,136 +1,123 @@
-# 🔐 Fluxo de Autenticação e Validação com DTOs — Savana Pet Café
+☕🐾 Savana — Cafeteria com Propósito
 
-## Visão Geral
+As pessoas vêm pela comida… e saem com um novo melhor amigo.
 
-Este documento descreve o fluxo de **Login e Cadastro** do sistema Savana Pet Café, cobrindo a integração entre o frontend (Next.js) e o backend (NestJS), além do uso de **DTOs (Data Transfer Objects)** para validação de dados.
 
----
+🎯 O Problema que Resolvemos
+Abrigos e ONGs de proteção animal enfrentam dois desafios críticos e simultâneos: falta de visibilidade para os animais disponíveis para adoção e escassez crônica de recursos para custear vacinas, castrações, rações e emergências veterinárias.
+Ao mesmo tempo, cafeterias tradicionais não têm mecanismo algum para conectar seus clientes a causas sociais relevantes.
+O Savana resolve os dois lados desse problema em uma única plataforma:
 
-## Fluxo de Cadastro de Usuário
+Para a ONG: expõe os animais resgatados a um público que já está presencialmente engajado, aumentando as chances reais de adoção.
+Para os clientes: transforma um simples café ou bolo em um ato de impacto — cada venda reverte diretamente para alimentação, medicamentos e cuidados dos animais.
+Para doadores: oferece um canal direto de contribuição via QR Code, sem burocracia.
 
-### Frontend → Backend
+A plataforma é desenvolvida em parceria com a APASFA (Associação Protetora dos Animais São Francisco de Assis).
 
-1. O usuário acessa `/cadastro/funcionario` e preenche o formulário com **nome, CPF, email, senha e confirmação de senha**
-2. O formulário é validado localmente com **Zod** antes de qualquer requisição
-3. Após validação, o frontend envia uma requisição `POST /users` com os dados em JSON
-4. O backend recebe os dados, valida com o `CreateUserDto` e criptografa a senha com **bcrypt**
-5. O usuário é salvo no banco via **Prisma** e o frontend redireciona para `/login`
+🖼️ Protótipo
+O design completo da interface está disponível no Figma:
+🔗 Acessar protótipo no Figma
 
-```
+🌐 Funcionalidades
+ÁreaFuncionalidade🏠 Landing PageApresentação do projeto, links para adoção, cardápio, doações e regras☕ Cardápio DigitalListagem de produtos com nome, preço e descrição🐶 AdoçãoPerfis dos animais resgatados com foto, nome, porte e status💰 DoaçõesQR Code para doação direta à ONG🕐 Regras e HoráriosInformações de visitação ao espaço🔐 Área AdministrativaLogin de funcionários + CRUD completo de animais e produtos
+
+🛠️ Stack Técnica
+Frontend
+TecnologiaVersãoUsoNext.js16.1.6Framework React fullstackReact19.2.3Interface de usuárioTypeScript^5Tipagem estáticaTailwind CSS^4Estilização utilitáriaReact Hook Form^7Gerenciamento de formuláriosZod^4Validação de schemas no clienteESLint^9Linting (Next.js + TypeScript)
+Backend
+TecnologiaUsoNestJSFramework backendPrismaORM — banco SQLitebcryptCriptografia de senhas@nestjs/jwtGeração e validação de tokens JWTclass-validatorValidação dos DTOsclass-transformerTransformação de tipos nos DTOs
+
+🔐 Autenticação e Validação
+O sistema usa um fluxo completo de autenticação com JWT, com validação dupla: Zod no frontend e DTOs com class-validator no backend.
+Fluxo de Cadastro
 [Formulário] → Zod valida → POST /users → CreateUserDto valida → bcrypt hash → Prisma salva
-```
 
----
+Usuário preenche nome, CPF, email, senha e confirmação em /cadastro/funcionario
+Zod valida localmente antes de qualquer requisição
+Backend recebe, valida com CreateUserDto, criptografa a senha com bcrypt e salva via Prisma
 
-## Fluxo de Login
+Fluxo de Login
+[Formulário] → Zod valida → POST /auth/login → LoginDto valida → bcrypt compare → JWT → localStorage
 
-### Frontend → Backend → Token JWT
+Usuário preenche email e senha em /login
+Backend valida com LoginDto, compara a senha e retorna um JWT com validade de 1 dia
+Frontend salva o token no localStorage e redireciona para /gerenciamento
 
-1. O usuário acessa `/login` e preenche **email e senha**
-2. O formulário é validado com **Zod**
-3. O frontend envia `POST /auth/login` com email e password
-4. O backend valida com o `LoginDto`, busca o usuário no banco e compara a senha com **bcrypt**
-5. Se válido, o backend retorna um **JWT token** com validade de 1 dia
-6. O frontend salva o token no `localStorage` e redireciona para `/gerenciamento`
+DTOs
+LoginDto
+CampoTipoValidaçãoemailstringFormato de email válidopasswordstringMínimo de 6 caracteres
+CreateUserDto
+CampoTipoValidaçãonamestringMínimo de 3 caracterescpfstringEntre 11 e 14 caracteresemailstringFormato de email válidopasswordstringMínimo de 6 caracteres
+CreatePetDto
+CampoTipoValidaçãonamestringMínimo de 2 caracteresspeciesstringObrigatórioagenumberMínimo 0breedstringObrigatóriodescriptionstringMínimo de 10 caracteresimagestringOpcional
+CreateMenuDto
+CampoTipoValidaçãonamestringMínimo de 2 caracteresdescriptionstringMínimo de 5 caracterespricenumberMínimo 0.01categorystringObrigatórioimagestringOpcional
+Validação Global (Backend)
+typescriptapp.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-```
-[Formulário] → Zod valida → POST /auth/login → LoginDto valida → bcrypt compare → JWT gerado → localStorage
-```
+whitelist: true — remove campos não declarados no DTO automaticamente
+transform: true — converte tipos automaticamente (ex: "2" → 2)
 
----
-
-## DTOs utilizados
-
-### `LoginDto` — `src/auth/dto/login.dto.ts`
-
-Valida os dados de entrada do login.
-
-| Campo      | Tipo   | Validação                        |
-|------------|--------|----------------------------------|
-| `email`    | string | Formato de email válido          |
-| `password` | string | Mínimo de 6 caracteres           |
-
----
-
-### `CreateUserDto` — `src/users/dto/create-user.dto.ts`
-
-Valida os dados de cadastro de um novo usuário.
-
-| Campo      | Tipo   | Validação                        |
-|------------|--------|----------------------------------|
-| `name`     | string | Mínimo de 3 caracteres           |
-| `cpf`      | string | Entre 11 e 14 caracteres         |
-| `email`    | string | Formato de email válido          |
-| `password` | string | Mínimo de 6 caracteres           |
-
----
-
-### `CreatePetDto` — `src/pets/dto/create-pet.dto.ts`
-
-Valida os dados de cadastro de um pet.
-
-| Campo         | Tipo   | Validação                        |
-|---------------|--------|----------------------------------|
-| `name`        | string | Mínimo de 2 caracteres           |
-| `species`     | string | Obrigatório                      |
-| `age`         | number | Mínimo 0                         |
-| `breed`       | string | Obrigatório                      |
-| `description` | string | Mínimo de 10 caracteres          |
-| `image`       | string | Opcional                         |
-
----
-
-### `CreateMenuDto` — `src/menu/dto/create-menu.dto.ts`
-
-Valida os dados de cadastro de um item do cardápio.
-
-| Campo         | Tipo   | Validação                        |
-|---------------|--------|----------------------------------|
-| `name`        | string | Mínimo de 2 caracteres           |
-| `description` | string | Mínimo de 5 caracteres           |
-| `price`       | number | Mínimo 0.01                      |
-| `category`    | string | Obrigatório                      |
-| `image`       | string | Opcional                         |
-
----
-
-## Validação Global
-
-O backend usa o `ValidationPipe` global do NestJS, configurado no `main.ts`:
-
-```typescript
-app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-```
-
-- `whitelist: true` — remove automaticamente campos não declarados no DTO
-- `transform: true` — converte tipos automaticamente (ex: string `"2"` para number `2`)
-
----
-
-## Proteção de Rotas com JWT Guard
-
-Rotas que exigem autenticação usam o `JwtAuthGuard`:
-
-```typescript
-@UseGuards(JwtAuthGuard)
+Proteção de Rotas com JWT Guard
+typescript@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-```
+O guard extrai o token do header Authorization: Bearer <token> e verifica a assinatura.
+AcessoRotas🔒 ProtegidasPOST /pets, DELETE /pets/:id, POST /menu, DELETE /menu/:id, DELETE /users/:id🌐 PúblicasGET /pets, GET /menu, GET /users, POST /auth/login, POST /users
 
-O guard extrai o token do header `Authorization: Bearer <token>`, verifica a assinatura e libera ou bloqueia o acesso.
+🚀 Como Rodar Localmente
+Pré-requisitos
 
-Rotas protegidas: `POST /pets`, `DELETE /pets/:id`, `POST /menu`, `DELETE /menu/:id`, `DELETE /users/:id`
+Node.js 18+
+npm ou yarn
 
-Rotas públicas: `GET /pets`, `GET /menu`, `GET /users`, `POST /auth/login`, `POST /users`
+Instalação
+bash# Clone o repositório
+git clone https://github.com/seu-usuario/savana.git
+cd savana
 
----
+# Instale as dependências
+npm install
+Configuração do Banco de Dados
+bash# Gere o cliente Prisma
+npx prisma generate
 
-## Tecnologias utilizadas neste fluxo
+# Execute as migrations
+npx prisma migrate dev
+Rodando o Projeto
+bash# Ambiente de desenvolvimento
+npm run dev
+Acesse http://localhost:3000.
 
-- **NestJS** — framework backend
-- **Prisma** — ORM para acesso ao banco SQLite
-- **bcrypt** — criptografia de senhas
-- **JWT (@nestjs/jwt)** — geração e validação de tokens
-- **class-validator** — validação dos DTOs
-- **class-transformer** — transformação de tipos nos DTOs
-- **Zod** — validação de formulários no frontend
-- **React Hook Form** — gerenciamento de formulários no frontend
+✅ Verificação de Lint
+O projeto usa eslint-config-next com suporte a TypeScript. Para checar:
+bashnpm run lint
+A configuração em eslint.config.mjs estende next/core-web-vitals e next/typescript, garantindo zero warnings e erros em produção.
+
+📁 Estrutura de Pastas
+savana/
+├── app/
+│   ├── adocao/          # Página de adoção de animais
+│   ├── cadastro/        # Cadastro de animais, funcionários e produtos
+│   ├── cardapio/        # Cardápio digital
+│   ├── doacoes/         # Página de doações via QR Code
+│   ├── gerenciamento/   # Painel administrativo
+│   ├── login/           # Autenticação de funcionários
+│   ├── regras/          # Horários e regras de visitação
+│   ├── components/
+│   │   ├── atomos/      # Button, Input, Title, Description…
+│   │   ├── moleculas/   # Card, CardAnimal, CardProduto…
+│   │   └── organismos/  # Forms, Header, Footer, LoginForm…
+│   ├── hooks/           # useUser (autenticação)
+│   ├── lib/             # Schemas Zod, utils, mock de usuários
+│   └── services/        # authService
+├── prisma.config.ts
+├── next.config.ts
+└── eslint.config.mjs
+
+📌 Status
+🚧 Finalizado |  🎓 Projeto acadêmico  |  🤝 Parceria com a APASFA
+
+📜 Licença
+Desenvolvido para fins acadêmicos e sociais. Uso educacional permitido.
+
+Cada xícara vendida e cada doação realizada representam mais cuidado, mais proteção e mais esperança para um animal resgatado. 🐾☕
